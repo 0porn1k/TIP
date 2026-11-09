@@ -85,7 +85,7 @@ export function addTask(tasks, id, title, priority = "medium") {
   return { ok: true, tasks: [...tasks, created.task] };
 }
 
-function updateTask(tasks, id, changes) {
+function replaceTask(tasks, id, changes) {
   const idError = checkId(id);
   if (idError) {
     return { ok: false, error: idError };
@@ -105,7 +105,7 @@ export function setTaskCompleted(tasks, id, completed) {
   if (typeof completed !== "boolean") {
     return { ok: false, error: "Статус выполнения должен быть true или false" };
   }
-  return updateTask(tasks, id, { completed });
+  return replaceTask(tasks, id, { completed });
 }
 
 export function renameTask(tasks, id, title) {
@@ -113,7 +113,7 @@ export function renameTask(tasks, id, title) {
   if (!titleResult.ok) {
     return titleResult;
   }
-  return updateTask(tasks, id, { title: titleResult.title });
+  return replaceTask(tasks, id, { title: titleResult.title });
 }
 
 export function removeTask(tasks, id) {
@@ -127,4 +127,15 @@ export function removeTask(tasks, id) {
   }
 
   return { ok: true, tasks: tasks.filter((task) => task.id !== id) };
+}
+
+export function updateTask(tasks, id, title, priority) {
+  const titleResult = normalizeTitle(title);
+  if (!titleResult.ok) {
+    return titleResult;
+  }
+  if (!PRIORITIES.includes(priority)) {
+    return { ok: false, error: "Приоритет должен быть low, medium или high" };
+  }
+  return replaceTask(tasks, id, { title: titleResult.title, priority });
 }

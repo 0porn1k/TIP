@@ -36,10 +36,11 @@ export function createTaskElement(task) {
 
   const toggleButton = createActionButton("toggle", "Выполнена");
   toggleButton.setAttribute("aria-pressed", String(task.completed));
+  const editButton = createActionButton("edit", "Изменить");
   const deleteButton = createActionButton("delete", "Удалить");
 
   const actions = createElement("div", "task-actions");
-  actions.append(toggleButton, deleteButton);
+  actions.append(toggleButton, editButton, deleteButton);
 
   card.append(title, status, priority, actions);
   return card;
