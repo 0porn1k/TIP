@@ -347,13 +347,57 @@ check("35. Работа с другим набором, без зависимо�
   assert.deepEqual(tasks, before);
 });
 
-// Три собственных проверки можно добавить здесь, до итогового вывода,
-// либо выполнить отдельно и описать в отчёте. Общие проверки удалять не нужно.
-// Пример формы записи (не готовая проверка задания):
-// check("Собственный случай: ...", () => {
-//   const result = ...;
-//   assert.deepEqual(result, ...);
-// });
+check("36. Свои: удалить задачу и добавить её id заново", () => {
+  const tasks = fixture();
+  const withoutSeven = expectTasks(removeTask(tasks, 7));
+  const again = expectTasks(addTask(withoutSeven, 7, "Вернуть задачу", "low"));
+  assert.deepEqual(again.map((task) => task.id), [1, 4, 10, 7]);
+  assert.equal(again[3].completed, false);
+  assert.deepEqual(withoutSeven.map((task) => task.id), [1, 4, 10]);
+  assert.deepEqual(tasks, fixture());
+});
+
+check("37. Свои: изменить первую и последнюю запись, средние не трогать", () => {
+  const tasks = fixture();
+  const step1 = expectTasks(renameTask(tasks, 1, "Повторить функции"));
+  const step2 = expectTasks(setTaskCompleted(step1, 10, false));
+  assert.equal(step2[0].title, "Повторить функции");
+  assert.equal(step2[3].completed, false);
+  assert.equal(step2[1], tasks[1]);
+  assert.equal(step2[2], tasks[2]);
+  assert.notEqual(step2[0], tasks[0]);
+  assert.deepEqual(getTaskStats(step2), { total: 4, completed: 1, pending: 3, progress: 25 });
+  assert.deepEqual(tasks, fixture());
+});
+
+check("38. Свои: сценарий варианта 4 на копии набора", () => {
+  const tasks = [
+    { id: 11, title: "Выбрать тему семинара", completed: true, priority: "high" },
+    { id: 23, title: "Забронировать аудиторию", completed: true, priority: "medium" },
+    { id: 37, title: "Составить список участников", completed: true, priority: "low" },
+    { id: 41, title: "Подготовить презентацию", completed: false, priority: "high" },
+    { id: 58, title: "Разослать приглашения", completed: false, priority: "medium" },
+    { id: 64, title: "Распечатать раздаточные материалы", completed: false, priority: "low" },
+  ];
+  const before = copyTasks(tasks);
+  assert.equal(getTaskStats(tasks).progress, 50);
+  let current = expectTasks(addTask(tasks, 80, "Собрать отзывы участников", "high"));
+  current = expectTasks(setTaskCompleted(current, 11, true));
+  current = expectTasks(renameTask(current, 23, "Забронировать аудиторию с проектором"));
+  current = expectTasks(removeTask(current, 37));
+  expectFailure(addTask(current, 80, "Ещё раз", "high"));
+  assert.deepEqual(current.map((task) => task.id), [11, 23, 41, 58, 64, 80]);
+  assert.equal(getTaskStats(current).progress.toFixed(1), "33.3");
+  assert.deepEqual(tasks, before);
+});
+
+check("39. Свои: длина названия считается после trim", () => {
+  const title100 = "а".repeat(100);
+  const ok = createTask(5, `   ${title100}   `);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.task.title.length, 100);
+  expectFailure(renameTask(fixture(), 4, `${title100}б`));
+});
 
 console.log(`\nПроверок пройдено: ${passed}; не пройдено: ${failed}.`);
 if (failed > 0) {
