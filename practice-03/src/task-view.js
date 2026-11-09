@@ -1,26 +1,75 @@
 import { getTaskStats } from "./task-service.js";
 
-// Здесь создаётся DOM, но не изменяется состояние приложения.
-// Контракт карточки, селекторы и тексты описаны в методичке.
+const PRIORITY_LABELS = {
+  low: "Низкий",
+  medium: "Средний",
+  high: "Высокий",
+};
+
+function createElement(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) {
+    node.className = className;
+  }
+  if (text !== undefined) {
+    node.textContent = text;
+  }
+  return node;
+}
+
+function createActionButton(action, label) {
+  const button = createElement("button");
+  button.type = "button";
+  button.dataset.action = action;
+  button.append(createElement("span", "action-label", label));
+  return button;
+}
+
 export function createTaskElement(task) {
-  // TODO: li.task-card[data-task-id], название, статус, приоритет, две кнопки.
-  // Название — через textContent. Обработчики здесь не назначаются.
-  throw new Error("Не реализовано: createTaskElement");
+  const card = createElement("li", "task-card");
+  card.dataset.taskId = String(task.id);
+  card.classList.toggle("is-completed", task.completed);
+
+  const title = createElement("h3", "task-title", task.title);
+  const status = createElement("p", "task-status", task.completed ? "Выполнена" : "В работе");
+  const priority = createElement("p", "task-priority", PRIORITY_LABELS[task.priority]);
+
+  const toggleButton = createActionButton("toggle", "Выполнена");
+  toggleButton.setAttribute("aria-pressed", String(task.completed));
+  const deleteButton = createActionButton("delete", "Удалить");
+
+  const actions = createElement("div", "task-actions");
+  actions.append(toggleButton, deleteButton);
+
+  card.append(title, status, priority, actions);
+  return card;
 }
 
 export function renderTaskList(listElement, tasks) {
-  // TODO: создать карточки и заменить дочерние элементы списка.
-  // Сам listElement сохраняется: на нём находится делегированный обработчик.
-  throw new Error("Не реализовано: renderTaskList");
+  listElement.replaceChildren(...tasks.map(createTaskElement));
 }
 
 export function renderSummary(summaryElement, tasks, visibleCount) {
-  // TODO: получить getTaskStats(tasks), обновить пять [data-stat] внутри блока.
-  // tasks — ВЕСЬ текущий массив, visibleCount — длина отфильтрованного списка.
-  throw new Error("Не реализовано: renderSummary");
+  const { total, completed, pending, progress } = getTaskStats(tasks);
+  const values = {
+    total,
+    completed,
+    pending,
+    progress: `${progress.toFixed(1)}%`,
+    visible: visibleCount,
+  };
+
+  for (const [name, value] of Object.entries(values)) {
+    summaryElement.querySelector(`[data-stat="${name}"]`).textContent = String(value);
+  }
 }
 
 export function renderEmptyState(messageElement, total, visibleCount) {
-  // TODO: различать пустой общий список и пустой результат фильтра.
-  throw new Error("Не реализовано: renderEmptyState");
+  if (visibleCount > 0) {
+    messageElement.textContent = "";
+    messageElement.hidden = true;
+    return;
+  }
+  messageElement.textContent = total === 0 ? "Список задач пуст." : "Нет задач по выбранному фильтру.";
+  messageElement.hidden = false;
 }
